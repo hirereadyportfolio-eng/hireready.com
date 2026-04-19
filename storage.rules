@@ -1,0 +1,44 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Checks if the user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Admin check using custom claims (Recommended) OR relying on Firestore.
+    // NOTE: Firebase Storage CANNOT query Firestore natively in rules. 
+    // To properly secure storage, Custom Claims are REQUIRED. 
+    function isAdmin() {
+      return isAuth() && request.auth.token.role == "admin";
+    }
+
+    // =========================================================================
+    // Folders
+    // =========================================================================
+
+    // HACKATHON BANNERS
+    // Public can view them so frontend loads correctly.
+    // Only Custom Claim admins can upload/delete.
+    match /banners/{imageId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // USER SUBMISSIONS
+    // Only the owner can upload/update documents to their own folder.
+    // File size must be under 15MB to prevent abuse.
+    match /submissions/{userId}/{fileName} {
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAuth() 
+                   && request.auth.uid == userId 
+                   && request.resource.size < 15 * 1024 * 1024; // < 15MB
+    }
+
+    // Block access to everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

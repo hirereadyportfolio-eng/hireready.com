@@ -36,7 +36,8 @@ interface Lead {
   message: string;
   status: "new" | "contacted" | "qualified" | "closed" | "spam";
   createdAt: any;
-  source: string;
+  notes?: string;
+  followUpDate?: string;
 }
 
 export default function LeadCRM() {
@@ -45,7 +46,12 @@ export default function LeadCRM() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const leadsPerPage = 10;
+  const [auditLogs, setAuditLogs] = useState<string[]>([]);
 
   useEffect(() => {
     fetchLeads();
@@ -67,26 +73,68 @@ export default function LeadCRM() {
     }
   };
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1); // Reset page on search
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  const logAction = (action: string) => {
+    console.log(`[AUDIT] ${new Date().toISOString()}: ${action}`);
+    setAuditLogs(prev => [`${new Date().toLocaleTimeString()} - ${action}`, ...prev].slice(0, 50));
+  };
+
   const updateStatus = async (id: string, status: Lead["status"]) => {
     try {
       await updateDoc(doc(db, "leads", id), { status });
       setLeads(leads.map(l => l.id === id ? { ...l, status } : l));
       if (selectedLead?.id === id) setSelectedLead({ ...selectedLead, status });
+      logAction(`Updated lead ${id} to ${status}`);
       toast.success(`Pipeline updated: ${status}`);
     } catch (error) {
       toast.error("Update failed");
     }
   };
 
+  const updateLeadDetails = async (id: string, update: Partial<Lead>) => {
+    try {
+      await updateDoc(doc(db, "leads", id), update);
+      setLeads(leads.map(l => l.id === id ? { ...l, ...update } : l));
+      if (selectedLead?.id === id) setSelectedLead({ ...selectedLead, ...update } as Lead);
+      logAction(`Updated lead ${id} details`);
+      toast.success("Lead details updated");
+    } catch (error) {
+      toast.error("Update failed");
+    }
+  };
+
   const deleteLead = async (id: string) => {
-    if (!confirm("Permanently remove this lead?")) return;
+    const confirmationWord = "DELETE";
+    if (window.prompt(`Type "${confirmationWord}" to permanently wipe this lead data.`) !== confirmationWord) return;
     try {
       await deleteDoc(doc(db, "leads", id));
       setLeads(leads.filter(l => l.id !== id));
       setSelectedLead(null);
+      logAction(`Deleted lead ${id}`);
       toast.success("Lead removed");
     } catch (error) {
       toast.error("Delete failed");
+    }
+  };
+
+  const handleBulkStatus = async (status: Lead["status"]) => {
+    if (!selectedLeads.size) return;
+    if (!confirm(`Mark ${selectedLeads.size} leads as ${status}?`)) return;
+    try {
+      await Promise.all(Array.from(selectedLeads).map(id => updateDoc(doc(db, "leads", id), { status })));
+      setLeads(leads.map(l => selectedLeads.has(l.id) ? { ...l, status } : l));
+      logAction(`Bulk updated ${selectedLeads.size} leads to ${status}`);
+      setSelectedLeads(new Set());
+      toast.success("Bulk update complete");
+    } catch (e) {
+      toast.error("Bulk update failed partially");
     }
   };
 
@@ -110,11 +158,14 @@ export default function LeadCRM() {
   const filteredLeads = leads.filter(l => {
     const matchesStatus = filterStatus === "all" || l.status === filterStatus;
     const matchesRole = filterRole === "all" || l.role === filterRole;
-    const matchesSearch = l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         l.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         l.organization.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = l.name.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+                         l.email.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+                         l.organization.toLowerCase().includes(debouncedSearch.toLowerCase());
     return matchesStatus && matchesRole && matchesSearch;
   });
+
+  const paginatedLeads = filteredLeads.slice((currentPage - 1) * leadsPerPage, currentPage * leadsPerPage);
+  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
 
   const exportCSV = () => {
     const headers = ["Name", "Email", "Organization", "Role", "Status", "Date", "Message"];
@@ -198,15 +249,24 @@ export default function LeadCRM() {
       <div className="grid gap-4">
          {loading ? (
             [1,2,3].map(i => <div key={i} className="h-24 animate-pulse bg-white/5 rounded-3xl" />)
-         ) : filteredLeads.length === 0 ? (
+         ) : paginatedLeads.length === 0 ? (
             <div className="py-20 text-center text-white/10 italic font-bold">No leads matching your current criteria.</div>
-         ) : filteredLeads.map((lead) => (
+         ) : paginatedLeads.map((lead) => (
             <div 
               key={lead.id} 
-              onClick={() => setSelectedLead(lead)}
               className="flex flex-col md:flex-row md:items-center gap-6 p-6 rounded-[2rem] bg-white/[0.02] border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all cursor-pointer group"
             >
-               <div className="flex items-center gap-6 min-w-0 flex-1">
+               <input 
+                 type="checkbox" 
+                 checked={selectedLeads.has(lead.id)}
+                 onChange={(e) => {
+                   const newSet = new Set(selectedLeads);
+                   e.target.checked ? newSet.add(lead.id) : newSet.delete(lead.id);
+                   setSelectedLeads(newSet);
+                 }}
+                 className="mt-1 md:mt-0"
+               />
+               <div className="flex items-center gap-6 min-w-0 flex-1" onClick={() => setSelectedLead(lead)}>
                   <div className="h-14 w-14 rounded-full bg-gradient-to-tr from-blue-600/20 to-purple-600/20 flex items-center justify-center font-black italic text-white/20 group-hover:text-white transition-colors">
                      {lead.name[0]}
                   </div>
@@ -222,7 +282,7 @@ export default function LeadCRM() {
                   </div>
                </div>
                
-               <div className="md:w-64 text-sm text-white/40 truncate italic pr-10">
+               <div className="md:w-64 text-sm text-white/40 truncate italic pr-10" onClick={() => setSelectedLead(lead)}>
                   {lead.message}
                </div>
 
@@ -233,11 +293,37 @@ export default function LeadCRM() {
                         {lead.createdAt ? new Date(lead.createdAt.seconds * 1000).toLocaleDateString() : "Just now"}
                      </span>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-white/10 group-hover:text-white transition-all transform group-hover:translate-x-1" />
+                  <ChevronRight className="h-5 w-5 text-white/10 group-hover:text-white transition-all transform group-hover:translate-x-1" onClick={() => setSelectedLead(lead)} />
                </div>
             </div>
          ))}
       </div>
+
+      {/* Pagination & Bulk Actions */}
+      {leads.length > 0 && (
+         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+            <div className="flex items-center gap-2">
+               <span className="text-xs font-bold text-white/40 uppercase tracking-widest">Selected {selectedLeads.size}</span>
+               {selectedLeads.size > 0 && (
+                 <select 
+                   onChange={(e) => handleBulkStatus(e.target.value as any)}
+                   className="h-10 rounded-xl bg-white/5 border border-white/5 px-4 text-xs font-bold text-white/60 outline-none"
+                 >
+                    <option value="">Bulk Action...</option>
+                    <option value="qualified">Mark Qualified</option>
+                    <option value="closed">Mark Closed</option>
+                    <option value="spam">Mark Spam</option>
+                 </select>
+               )}
+            </div>
+            
+            <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+               <Button variant="ghost" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Prev</Button>
+               <span className="text-xs font-bold text-white/60">Page {currentPage} of {totalPages || 1}</span>
+               <Button variant="ghost" size="sm" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</Button>
+            </div>
+         </div>
+      )}
 
       {/* Detail Modal */}
       {selectedLead && (
@@ -280,6 +366,19 @@ export default function LeadCRM() {
                            {selectedLead.message}
                         </div>
                      </div>
+
+                     <div className="grid grid-cols-1 gap-8 border-t border-white/5 py-8">
+                        <div>
+                           <label className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em] block mb-2">Operator Notes</label>
+                           <textarea 
+                             className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm focus:outline-none" 
+                             rows={3}
+                             placeholder="Internal sales notes..."
+                             defaultValue={selectedLead.notes || ""}
+                             onBlur={(e) => updateLeadDetails(selectedLead.id, { notes: e.target.value })}
+                           />
+                        </div>
+                     </div>
                   </div>
 
                   {/* Sidebar Controls */}
@@ -292,6 +391,16 @@ export default function LeadCRM() {
                            <StageButton active={selectedLead.status === "closed"} onClick={() => updateStatus(selectedLead.id, "closed")} label="Close Deal" />
                            <StageButton active={selectedLead.status === "spam"} onClick={() => updateStatus(selectedLead.id, "spam")} label="Flag Spam" />
                         </div>
+                     </div>
+
+                     <div className="space-y-4 pt-6 border-t border-white/5">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Follow Up Date</span>
+                        <input 
+                          type="date"
+                          className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm text-white/70 focus:outline-none"
+                          defaultValue={selectedLead.followUpDate || ""}
+                          onChange={(e) => updateLeadDetails(selectedLead.id, { followUpDate: e.target.value })}
+                        />
                      </div>
 
                      <div className="space-y-4 pt-6 border-t border-white/5">

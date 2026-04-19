@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =========================================================================
+    // Core Functions
+    // =========================================================================
+    
+    // Checks if the user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    // Checks if the authenticated user is an Admin.
+    // NOTE: This uses Option B (Database read) for ease of MVP deployment.
+    // For extreme scale, use Custom Claims: `return request.auth.token.role == 'admin';`
+    function isAdmin() {
+      return isAuth() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // Checks if the user is writing to their own record
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    // Prevents overwriting certain critical fields during updates
+    function notUpdating(field) {
+      return !(field in request.resource.data) || request.resource.data[field] == resource.data[field];
+    }
+    
+    // =========================================================================
+    // Collections
+    // =========================================================================
+
+    // USERS
+    // Users can read/write their own profile. Admins have full access.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      // Users can update their profile but CANNOT self-promote to admin
+      allow update: if isOwner(userId) && notUpdating("role") || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // LEADS (CRM)
+    // Public can create (via contact form). Only admins can read/update/delete.
+    match /leads/{leadId} {
+      allow create: if true; // Public contact form
+      allow read, update, delete: if isAdmin();
+    }
+
+    // HACKATHONS
+    // Public can view "published" or "ongoing" hackathons. Admins can do anything.
+    match /hackathons/{hackId} {
+      allow read: if resource.data.status in ["published", "upcoming", "ongoing", "completed"] || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // REGISTRATIONS
+    // Users can register themselves. Admins manage all.
+    match /registrations/{regId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid || isAdmin();
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin(); // Only admins can approve/modify registrations
+      allow delete: if isAdmin();
+    }
+
+    // SUBMISSIONS
+    // Users can create/update their own submissions. Admins grade them.
+    match /submissions/{subId} {
+      allow read: if isAuth() && resource.data.userId == request.auth.uid || isAdmin();
+      // Users must attach their own UID. Cannot submit on behalf of others.
+      // Must not inject fake admin scores during creation.
+      allow create: if isAuth() 
+                    && request.resource.data.userId == request.auth.uid
+                    && (!("score" in request.resource.data));
+      // Users can update links but not their scores/grades.
+      allow update: if (isAuth() && resource.data.userId == request.auth.uid && notUpdating("score") && notUpdating("status")) 
+                    || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // SCORES (Leaderboard)
+    // Public can only view published scores. Admins manage all.
+    match /scores/{scoreId} {
+      allow read: if resource.data.isPublished == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ANNOUNCEMENTS
+    // Everyone can read. Only admins can write.
+    match /announcements/{annId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Block access to everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

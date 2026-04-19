@@ -17,18 +17,22 @@ import {
   ChevronRight,
   Menu,
   X,
-  Mail
+  Mail,
+  Medal,
+  LineChart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 
 const menuItems = [
   { icon: BarChart3, label: "Admin Metrics", href: "/admin" },
+  { icon: LineChart, label: "Analytics", href: "/admin/analytics" },
   { icon: Mail, label: "Capture Leads", href: "/admin/leads" },
   { icon: Trophy, label: "Manage Tracks", href: "/admin/hackathons" },
   { icon: Users, label: "Participants", href: "/admin/registrations" },
   { icon: Users, label: "Community", href: "/admin/users" },
   { icon: FileText, label: "Submissions", href: "/admin/submissions" },
+  { icon: Medal, label: "Leaderboard", href: "/admin/leaderboard" },
   { icon: Bell, label: "Announcements", href: "/admin/announcements" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];

@@ -31,19 +31,19 @@ export default function HomePage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[800px] bg-blue-600/5 blur-[120px] rounded-full -mt-96 pointer-events-none" />
         
         <div className="hr-container relative z-10 text-center space-y-10">
-          <Badge variant="accent" className="animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:200ms]">
+          <Badge variant="accent" className="animate-fade-in [animation-delay:200ms]">
              The Ultimate Talent Forge
           </Badge>
           
-          <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.8] animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:400ms]">
+          <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter uppercase leading-[0.8] animate-fade-in [animation-delay:400ms]">
             Hackathons That <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-blue-400 bg-[length:200%_auto] animate-gradient-flow">Build Careers</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:600ms]">
+          <p className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed animate-fade-in [animation-delay:600ms]">
             HireReady bridges the gap between students, colleges, and global companies through high-fidelity skill challenges and verified project signals.
           </p>
           
-          <div className="flex flex-wrap justify-center gap-4 pt-4 animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:800ms]">
+          <div className="flex flex-wrap justify-center gap-4 pt-4 animate-fade-in [animation-delay:800ms]">
             <ButtonLink href="/hackathons" size="lg" className="h-16 px-10 rounded-2xl shadow-2xl shadow-blue-500/20 text-lg">
                Join Hackathon
             </ButtonLink>
@@ -55,7 +55,7 @@ export default function HomePage() {
             </ButtonLink>
           </div>
 
-          <div className="pt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto opacity-0 animate-fade-in [animation-fill-mode:forwards] [animation-delay:1000ms]">
+          <div className="pt-20 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto animate-fade-in [animation-delay:1000ms]">
             <StatBox label="Active Participants" value="50k+" />
             <StatBox label="Completed Tracks" value="200+" />
             <StatBox label="Winners Hired" value="1.2k+" />
