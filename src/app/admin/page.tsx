@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { 
   Users, 
   Trophy, 
@@ -213,6 +215,4 @@ export default function AdminMetrics() {
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { collection, getDocs, doc, setDoc, serverTimestamp, query, where } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -19,7 +20,8 @@ import {
   AlertCircle,
   Upload,
   Loader2,
-  ArrowRight
+  ArrowRight,
+  Plus
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -316,6 +318,4 @@ export default function SubmissionsPage() {
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+

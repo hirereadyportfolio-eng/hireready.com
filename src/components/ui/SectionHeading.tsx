@@ -5,16 +5,26 @@ export function SectionHeading({
   title,
   description,
   className,
+  align = "left",
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   className?: string;
+  align?: "left" | "center" | "right";
 }) {
   return (
-    <div className={cn("max-w-2xl", className)}>
+    <div className={cn(
+      "max-w-2xl", 
+      align === "center" && "mx-auto text-center",
+      align === "right" && "ml-auto text-right",
+      className
+    )}>
       {eyebrow ? (
-        <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wide text-white/80">
+        <div className={cn(
+          "inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold tracking-wide text-white/80",
+          align === "center" && "mx-auto"
+        )}>
           {eyebrow}
         </div>
       ) : null}

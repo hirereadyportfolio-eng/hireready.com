@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, doc, updateDoc, serverTimestamp, query, orderBy, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -18,7 +19,8 @@ import {
   MoreVertical,
   ChevronRight,
   ExternalLink,
-  Award
+  Award,
+  X
 } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -185,7 +187,7 @@ function ScoreModal({ submission, onClose, onSuccess }: any) {
     presentation: 0
   });
 
-  const total = Object.values(scores).reduce((a: any, b: any) => a + b, 0);
+  const total: number = (Object.values(scores) as number[]).reduce((a: number, b: number) => a + b, 0);
 
   const handleScoreChange = (key: string, val: number) => {
     setScores({ ...scores, [key]: val });
@@ -314,6 +316,4 @@ function ScoreModal({ submission, onClose, onSuccess }: any) {
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+

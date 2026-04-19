@@ -4,6 +4,7 @@ import React from "react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 import { Check, Zap, Globe, Shield, Rocket, Building2 } from "lucide-react";
 
 export default function PricingPage() {
@@ -115,13 +116,11 @@ function PricingCard({ name, price, period, desc, features, cta, popular }: any)
          ))}
       </div>
 
-      <Button variant={popular ? "default" : "secondary"} className="w-full h-12 rounded-2xl font-bold tracking-tight italic">
+      <Button variant={popular ? "primary" : "secondary"} className="w-full h-12 rounded-2xl font-bold tracking-tight italic">
          {cta}
       </Button>
     </Card>
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(" ");
-}
+
