@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+:root {
+  --background: #070A12;
+  --foreground: #EAF0FF;
+  --muted: #A8B3D9;
+  --card: rgba(255, 255, 255, 0.06);
+  --card-border: rgba(255, 255, 255, 0.10);
+  --ring: rgba(120, 120, 255, 0.45);
+  --accent: #7C3AED;
+  --accent-2: #1D4ED8;
+  --accent-3: #22D3EE;
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-ring: var(--ring);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
+  --shadow-elevated: var(--shadow);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background:
+    radial-gradient(1100px 600px at 12% 8%, rgba(29, 78, 216, 0.26), transparent 60%),
+    radial-gradient(900px 520px at 82% 18%, rgba(124, 58, 237, 0.22), transparent 55%),
+    radial-gradient(680px 380px at 55% 86%, rgba(34, 211, 238, 0.14), transparent 55%),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, Segoe UI,
+    Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.35);
+  color: #fff;
+}
+
+* {
+  scroll-behavior: smooth;
+}
+
+.hr-container {
+  @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+}
+
+.hr-glass {
+  @apply bg-[color:var(--color-card)] border border-[color:var(--color-card-border)] backdrop-blur-xl;
+}
+
+.hr-text-muted {
+  color: var(--muted);
+}
